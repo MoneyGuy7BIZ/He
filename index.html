@@ -2,217 +2,217 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Internet Connect Sim</title>
+  <title>Internet Connect Simulator</title>
   <style>
-    body {
-      font-family: Consolas, monospace;
-      background-color: #111;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      overflow: hidden;
+    /* GLOBAL RESET & LAYOUT */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body, html {
+      width:100%; height:100%;
+      background: #000;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      overflow:hidden;
     }
+    #canvas-bg { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; }
+    #app { position:relative; width:90%; max-width:900px; margin: auto; top:5%; }
 
-    #app {
-      text-align: center;
-      width: 95%;
-      max-width: 1000px;
-    }
-
+    /* BUTTONS */
     button {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      font-size: 18px;
-      cursor: pointer;
-      border-radius: 8px;
-      margin-top: 20px;
-      transition: 0.2s;
+      background:#022; border:1px solid #046; color:#0f0;
+      padding:12px 24px; margin:20px 10px; cursor:pointer;
+      transition: 0.2s; font-size:16px;
+    }
+    button:hover { background:#048; }
+
+    /* PAGES */
+    .page { display:none; text-align:center; }
+    .active { display:block; }
+
+    /* TERMINAL BOX */
+    .terminal {
+      background: rgba(0,0,0,0.85);
+      border: 1px solid #046;
+      padding:20px; height:350px;
+      overflow-y:auto; white-space:pre-wrap;
+      margin-top:20px;
     }
 
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .code-box {
-      background-color: black;
-      color: limegreen;
-      font-family: monospace;
-      padding: 20px;
-      text-align: left;
-      height: 400px;
-      overflow-y: auto;
-      white-space: pre;
-      border-radius: 8px;
-      border: 1px solid #333;
-      margin-top: 20px;
-      box-shadow: 0 0 15px limegreen;
-    }
-
-    .status {
-      font-size: 24px;
-      margin-top: 20px;
-      font-weight: bold;
-    }
-
-    .green {
-      color: lightgreen;
-    }
-
-    .red {
-      color: red;
-    }
-
-    .glitch {
-      animation: flicker 0.2s infinite;
-    }
-
+    /* STATUS TEXT */
+    .status { font-size:22px; margin-top:20px; }
+    .green { color:#0f0; }
+    .red { color:#f00; animation: flicker 0.15s infinite; }
     @keyframes flicker {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
+      0%,100%{opacity:1;}
+      50%{opacity:0.4;}
     }
 
-    .background-warning {
-      animation: flashRed 0.5s infinite alternate;
+    /* PROGRESS BAR */
+    .progress-container {
+      width:80%; background:#222; border:1px solid #046; margin:20px auto; height:20px;
+    }
+    .progress-bar {
+      width:0; height:100%; background:#0f0; transition:width 0.2s;
     }
 
-    @keyframes flashRed {
-      from { background-color: #220000; }
-      to   { background-color: #440000; }
-    }
+    /* DIAGNOSTICS LIST */
+    .diag-list { text-align:left; margin:20px auto; width:80%; }
+    .diag-list li { margin:8px 0; }
+
+    /* SOUND ICON HINT */
+    .mute-toggle { position:absolute; top:10px; right:10px; color:#0f0; cursor:pointer; }
   </style>
 </head>
 <body>
+  <canvas id="canvas-bg"></canvas>
   <div id="app">
-    <!-- Main Page -->
-    <div id="page-main">
-      <h1>Connect to Internet</h1>
-      <button onclick="connectToInternet()">Connect</button>
+    <div id="page-main" class="page active">
+      <h1>🌐 Connect to Internet</h1>
+      <button onclick="connect()">CONNECT</button>
     </div>
 
-    <!-- Internet Secured -->
-    <div id="page-connected" class="hidden">
+    <div id="page-connected" class="page">
       <h1 class="green">✅ Internet Secured</h1>
-      <p>Connection established and encrypted.</p>
-      <button onclick="goHome()">Back</button>
+      <p>✔️ TLS handshake complete<br/>✔️ Data channels encrypted</p>
+      <button onclick="goHome()">↩️ BACK</button>
     </div>
 
-    <!-- Logout / Terminal Sim -->
-    <div id="page-logout" class="hidden">
-      <h1 class="red glitch">🔒 Authentication Required</h1>
-      <div class="code-box" id="code-box"></div>
-      <div class="status hidden" id="logout-status"></div>
-      <button class="hidden" id="back-button" onclick="goHome()">Back</button>
+    <div id="page-logout" class="page">
+      <h1 id="logout-header" class="red">🔒 AUTH REQUIRED</h1>
+      <div class="terminal" id="terminal"></div>
+      <div class="progress-container"><div id="progress" class="progress-bar"></div></div>
+      <div id="logout-status" class="status"></div>
+      <button id="back-btn" onclick="goHome()" style="display:none;">↩️ BACK</button>
+      <button id="diag-btn" onclick="goDiagnostics()" style="display:none;">🛠️ RUN DIAGNOSTICS</button>
     </div>
+
+    <div id="page-diag" class="page">
+      <h1>🛠️ Network Diagnostics</h1>
+      <ul class="diag-list" id="diag-output"></ul>
+      <button onclick="goHome()">↩️ HOME</button>
+    </div>
+
+    <div class="mute-toggle" onclick="toggleSound()">🔊</div>
   </div>
 
+  <!-- AUDIO ELEMENTS -->
+  <audio id="snd-success"><source src="https://assets.mixkit.co/sfx/preview/mixkit-futuristic-technology-notification-212.mp3"></audio>
+  <audio id="snd-fail"><source src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-alarm-998.wav"></audio>
+
   <script>
-    function connectToInternet() {
-      const goToConnected = Math.random() < 0.5;
-      document.getElementById('page-main').classList.add('hidden');
-      if (goToConnected) {
-        document.getElementById('page-connected').classList.remove('hidden');
+    // MATRIX RAIN BACKGROUND
+    const canvas = document.getElementById('canvas-bg');
+    const ctx = canvas.getContext('2d');
+    const cols = 150;
+    const ypos = Array(cols).fill(1);
+    function matrix() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#0f0';
+      ypos.forEach((y, ind) => {
+        const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+        const x = ind * 10;
+        ctx.fillText(text, x, y);
+        ypos[ind] = y > canvas.height + Math.random()*10000 ? 0 : y + 10;
+      });
+    }
+    setInterval(matrix, 50);
+
+    // SOUND CONTROL
+    let muted = false;
+    function toggleSound() {
+      muted = !muted;
+      document.querySelector('.mute-toggle').textContent = muted ? '🔇' : '🔊';
+    }
+
+    // NAVIGATION
+    function show(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(page).classList.add('active');
+    }
+    function goHome() {
+      show('page-main');
+      resetTerminal();
+    }
+
+    // CONNECT LOGIC
+    function connect() {
+      if (Math.random()<0.5) {
+        show('page-connected');
       } else {
-        document.getElementById('page-logout').classList.remove('hidden');
-        simulateLogout();
+        show('page-logout');
+        runLogoutSequence();
       }
     }
 
-    function goHome() {
-      document.getElementById('page-main').classList.remove('hidden');
-      document.getElementById('page-connected').classList.add('hidden');
-      document.getElementById('page-logout').classList.add('hidden');
-      document.getElementById('code-box').innerText = '';
-      document.getElementById('logout-status').classList.add('hidden');
-      document.getElementById('logout-status').classList.remove('green', 'red');
-      document.getElementById('back-button').classList.add('hidden');
-      document.body.classList.remove('background-warning');
-    }
-
-    function simulateLogout() {
-      const codeBox = document.getElementById('code-box');
+    // LOGOUT SEQUENCE
+    const steps = [
+      "INITIATE_LOGOUT.SEQ", "TERMINATING_SESSIONS", "REVOKING_TOKENS",
+      "FLUSH_ROUTING_TABLE", "RELEASE_DHCP", "UNMOUNT_NETDRV",
+      "KILL_PROC[3072]", "CLEAR_CACHE", "ZERO_FILL_MEM",
+      "AUTH_CHECK[ERR_CODE:0x1F]", "AES_CIPHER_WIPE", "CRC_CHECK_FAIL",
+      "SHUTDOWN_WARN", "OVERRIDE_SECURITY", "CORE_DUMP_START",
+      "TRACEBACK_ANALYSIS", "SEC_COMPROMISED", "ESCALATION_TRIGGER",
+      "SYSTEM_FREEZE", "EMERGENCY_OVERRIDE", "FINALIZING_LOGOUT"
+    ];
+    function runLogoutSequence() {
+      const term = document.getElementById('terminal');
+      const prog = document.getElementById('progress');
       const status = document.getElementById('logout-status');
-      const backBtn = document.getElementById('back-button');
+      const back = document.getElementById('back-btn');
+      const diag = document.getElementById('diag-btn');
+      term.innerText = ''; prog.style.width='0%'; status.innerText=''; back.style.display='none'; diag.style.display='none';
 
-      const fakeCodeLines = [
-        "[AUTH] Initializing logout sequence...",
-        "[AUTH] Terminating session token...",
-        "[AUTH] Revoking credentials...",
-        "[NET] Flushing route table...",
-        "[NET] Releasing DHCP lease...",
-        "[SYS] Locating active user threads...",
-        "[SYS] Sending SIGTERM to PID 3021...",
-        "[SYS] Verifying thread shutdown...",
-        "[SYS] Killing residual processes...",
-        "[MEM] Clearing volatile memory blocks...",
-        "[FILE] Encrypting session log files...",
-        "[FILE] Removing /tmp/netauth.lock...",
-        "[FSYS] Unmounting network volume...",
-        "[FSYS] Unmount failed. Retrying...",
-        "[CPU] Dropping core threads...",
-        "[SYS] Dropping to fallback shell...",
-        "[AUTH] Unexpected auth key found. UID: 0x57AC",
-        "[SEC] Triggering security override...",
-        "[SEC] ERROR: Override failed. No access",
-        "[AI] Detected loopback echo. Running trace...",
-        "[AI] Trace complete. Node: 192.168.0.254",
-        "[SYS] Injecting null packet...",
-        "[NET] Packet rejected by router firewall",
-        "[NET] Attempting MAC spoof...",
-        "[MAC] Spoof failed. Address in use.",
-        "[SYS] Access denied by rootlock...",
-        "[SEC] Generating SHA-512 challenge...",
-        "[SEC] No response. Initiating fallback...",
-        "[CPU] Overheating detected. Reducing clock...",
-        "[MEM] Swapping to pagefile.sys...",
-        "[FSYS] Read error: Sector 13",
-        "[FILE] Integrity check failed. Code: 0x3F2B",
-        "[CORE] Restoring system to checkpoint...",
-        "[CORE] Checkpoint expired. Manual reset required.",
-        "[UI] Display session logout screen...",
-        "[SYS] Logging system out...",
-        "[SYS] ERROR: Stack overflow during logout!",
-        "[SYS] Retrying logout...",
-        "[SYS] Terminating all sessions forcefully...",
-        "[AUTH] Logout attempt timed out...",
-        "[AUTH] Session remains active. System breach risk.",
-        "[FIREWALL] Closing ports: 80, 443, 22",
-        "[SYS] Waiting for system response..."
-      ];
-
-      let i = 0;
-      let output = '';
+      let i=0;
       const interval = setInterval(() => {
-        if (i < fakeCodeLines.length) {
-          output += fakeCodeLines[i] + '\n';
-          codeBox.innerText = output;
-          codeBox.scrollTop = codeBox.scrollHeight;
-          i++;
+        if (i<steps.length) {
+          term.innerText += `[${new Date().toISOString()}] ${steps[i++]}\n`;
+          prog.style.width = ((i/steps.length)*100) + '%';
+          term.scrollTop = term.scrollHeight;
         } else {
           clearInterval(interval);
-
-          const logoutSuccess = Math.random() < 0.2;
-          if (logoutSuccess) {
-            status.innerText = "✅ Log Out Successful";
-            status.classList.add('green');
+          const success = Math.random()<0.2;
+          if (success) {
+            status.textContent = "✅ LOGOUT SUCCESSFUL";
+            !muted && document.getElementById('snd-success').play();
           } else {
-            status.innerText = "❌ Log Out Failed – System Breach";
-            status.classList.add('red');
-            document.body.classList.add('background-warning');
+            status.textContent = "❌ LOGOUT FAILED – SYSTEM BREACH";
+            document.body.style.animation = 'flicker 0.2s infinite';
+            !muted && document.getElementById('snd-fail').play();
+            diag.style.display='inline-block';
           }
-
-          status.classList.remove('hidden');
-          backBtn.classList.remove('hidden');
+          status.className = 'status ' + (success ? 'green' : 'red');
+          back.style.display='inline-block';
         }
-      }, 100);
+      }, 200);
+    }
+
+    // DIAGNOSTICS
+    const diagSteps = [
+      "PING 8.8.8.8 ... RTT=23ms", "PING 1.1.1.1 ... TIMEOUT",
+      "TRACEROUTE to google.com", "HOP 1: 192.168.1.1", "HOP 2: * * *",
+      "HOP 3: 10.0.0.1", "DNS LOOKUP: FAILED", "ROUTE FLUSH: OK",
+      "FIREWALL STATUS: BLOCKED", "RE-ATTEMPTING AUTH", "AUTH: DENIED"
+    ];
+    function goDiagnostics() {
+      show('page-diag');
+      const list = document.getElementById('diag-output');
+      list.innerHTML = '';
+      diagSteps.forEach((l, i) => {
+        setTimeout(() => {
+          const li = document.createElement('li');
+          li.textContent = l;
+          list.appendChild(li);
+        }, i*500);
+      });
+    }
+
+    // RESET TERMINAL
+    function resetTerminal() {
+      document.getElementById('terminal').innerText = '';
+      document.getElementById('progress').style.width = '0%';
+      document.body.style.animation = '';
     }
   </script>
 </body>
