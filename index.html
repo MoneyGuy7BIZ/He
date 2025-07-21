@@ -13,12 +13,13 @@
       align-items: center;
       height: 100vh;
       margin: 0;
+      overflow: hidden;
     }
 
     #app {
       text-align: center;
-      width: 90%;
-      max-width: 700px;
+      width: 95%;
+      max-width: 1000px;
     }
 
     button {
@@ -47,13 +48,13 @@
       font-family: monospace;
       padding: 20px;
       text-align: left;
-      height: 320px;
-      overflow: hidden;
+      height: 400px;
+      overflow-y: auto;
       white-space: pre;
       border-radius: 8px;
       border: 1px solid #333;
       margin-top: 20px;
-      box-shadow: 0 0 10px limegreen;
+      box-shadow: 0 0 15px limegreen;
     }
 
     .status {
@@ -75,9 +76,8 @@
     }
 
     @keyframes flicker {
-      0%   { opacity: 1; }
-      50%  { opacity: 0.4; }
-      100% { opacity: 1; }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
     }
 
     .background-warning {
@@ -86,7 +86,7 @@
 
     @keyframes flashRed {
       from { background-color: #220000; }
-      to   { background-color: #550000; }
+      to   { background-color: #440000; }
     }
   </style>
 </head>
@@ -108,9 +108,7 @@
     <!-- Logout / Terminal Sim -->
     <div id="page-logout" class="hidden">
       <h1 class="red glitch">🔒 Authentication Required</h1>
-      <div class="code-box" id="code-box">
-        <!-- Fake code will load here -->
-      </div>
+      <div class="code-box" id="code-box"></div>
       <div class="status hidden" id="logout-status"></div>
       <button class="hidden" id="back-button" onclick="goHome()">Back</button>
     </div>
@@ -145,17 +143,49 @@
       const backBtn = document.getElementById('back-button');
 
       const fakeCodeLines = [
-        '[SYS] Disconnecting from secure node...',
-        '[SYS] Revoking access token...',
-        '[NET] IP lease terminated.',
-        '[NET] DNS flushed.',
-        '[AUTH] User authentication error.',
-        '[SYS] Logging out user...',
-        '[SYS] Encountering interruption...',
-        '[SYS] Reattempting logout...',
-        '[SYS] System freeze detected.',
-        '[SYS] Executing emergency override...',
-        '[SYS] ...'
+        "[AUTH] Initializing logout sequence...",
+        "[AUTH] Terminating session token...",
+        "[AUTH] Revoking credentials...",
+        "[NET] Flushing route table...",
+        "[NET] Releasing DHCP lease...",
+        "[SYS] Locating active user threads...",
+        "[SYS] Sending SIGTERM to PID 3021...",
+        "[SYS] Verifying thread shutdown...",
+        "[SYS] Killing residual processes...",
+        "[MEM] Clearing volatile memory blocks...",
+        "[FILE] Encrypting session log files...",
+        "[FILE] Removing /tmp/netauth.lock...",
+        "[FSYS] Unmounting network volume...",
+        "[FSYS] Unmount failed. Retrying...",
+        "[CPU] Dropping core threads...",
+        "[SYS] Dropping to fallback shell...",
+        "[AUTH] Unexpected auth key found. UID: 0x57AC",
+        "[SEC] Triggering security override...",
+        "[SEC] ERROR: Override failed. No access",
+        "[AI] Detected loopback echo. Running trace...",
+        "[AI] Trace complete. Node: 192.168.0.254",
+        "[SYS] Injecting null packet...",
+        "[NET] Packet rejected by router firewall",
+        "[NET] Attempting MAC spoof...",
+        "[MAC] Spoof failed. Address in use.",
+        "[SYS] Access denied by rootlock...",
+        "[SEC] Generating SHA-512 challenge...",
+        "[SEC] No response. Initiating fallback...",
+        "[CPU] Overheating detected. Reducing clock...",
+        "[MEM] Swapping to pagefile.sys...",
+        "[FSYS] Read error: Sector 13",
+        "[FILE] Integrity check failed. Code: 0x3F2B",
+        "[CORE] Restoring system to checkpoint...",
+        "[CORE] Checkpoint expired. Manual reset required.",
+        "[UI] Display session logout screen...",
+        "[SYS] Logging system out...",
+        "[SYS] ERROR: Stack overflow during logout!",
+        "[SYS] Retrying logout...",
+        "[SYS] Terminating all sessions forcefully...",
+        "[AUTH] Logout attempt timed out...",
+        "[AUTH] Session remains active. System breach risk.",
+        "[FIREWALL] Closing ports: 80, 443, 22",
+        "[SYS] Waiting for system response..."
       ];
 
       let i = 0;
@@ -164,16 +194,17 @@
         if (i < fakeCodeLines.length) {
           output += fakeCodeLines[i] + '\n';
           codeBox.innerText = output;
+          codeBox.scrollTop = codeBox.scrollHeight;
           i++;
         } else {
           clearInterval(interval);
 
           const logoutSuccess = Math.random() < 0.2;
           if (logoutSuccess) {
-            status.innerText = '✅ Log Out Successful';
+            status.innerText = "✅ Log Out Successful";
             status.classList.add('green');
           } else {
-            status.innerText = '❌ Log Out Failed - System Breach';
+            status.innerText = "❌ Log Out Failed – System Breach";
             status.classList.add('red');
             document.body.classList.add('background-warning');
           }
@@ -181,7 +212,7 @@
           status.classList.remove('hidden');
           backBtn.classList.remove('hidden');
         }
-      }, 500);
+      }, 100);
     }
   </script>
 </body>
