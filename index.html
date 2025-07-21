@@ -5,7 +5,7 @@
   <title>Internet Connect Sim</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: Consolas, monospace;
       background-color: #111;
       color: white;
       display: flex;
@@ -18,7 +18,7 @@
     #app {
       text-align: center;
       width: 90%;
-      max-width: 600px;
+      max-width: 700px;
     }
 
     button {
@@ -30,6 +30,15 @@
       cursor: pointer;
       border-radius: 8px;
       margin-top: 20px;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .hidden {
+      display: none;
     }
 
     .code-box {
@@ -38,20 +47,19 @@
       font-family: monospace;
       padding: 20px;
       text-align: left;
-      height: 300px;
+      height: 320px;
       overflow: hidden;
       white-space: pre;
       border-radius: 8px;
+      border: 1px solid #333;
       margin-top: 20px;
-    }
-
-    .hidden {
-      display: none;
+      box-shadow: 0 0 10px limegreen;
     }
 
     .status {
       font-size: 24px;
       margin-top: 20px;
+      font-weight: bold;
     }
 
     .green {
@@ -61,27 +69,50 @@
     .red {
       color: red;
     }
+
+    .glitch {
+      animation: flicker 0.2s infinite;
+    }
+
+    @keyframes flicker {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    .background-warning {
+      animation: flashRed 0.5s infinite alternate;
+    }
+
+    @keyframes flashRed {
+      from { background-color: #220000; }
+      to   { background-color: #550000; }
+    }
   </style>
 </head>
 <body>
   <div id="app">
+    <!-- Main Page -->
     <div id="page-main">
       <h1>Connect to Internet</h1>
       <button onclick="connectToInternet()">Connect</button>
     </div>
 
+    <!-- Internet Secured -->
     <div id="page-connected" class="hidden">
       <h1 class="green">✅ Internet Secured</h1>
+      <p>Connection established and encrypted.</p>
       <button onclick="goHome()">Back</button>
     </div>
 
+    <!-- Logout / Terminal Sim -->
     <div id="page-logout" class="hidden">
-      <h1 class="red">🔒 Authentication Required</h1>
+      <h1 class="red glitch">🔒 Authentication Required</h1>
       <div class="code-box" id="code-box">
-        <!-- Fake code will appear here -->
+        <!-- Fake code will load here -->
       </div>
-      <div class="status green hidden" id="logout-status">✅ Log Out Successful</div>
-      <button onclick="goHome()">Back</button>
+      <div class="status hidden" id="logout-status"></div>
+      <button class="hidden" id="back-button" onclick="goHome()">Back</button>
     </div>
   </div>
 
@@ -103,30 +134,52 @@
       document.getElementById('page-logout').classList.add('hidden');
       document.getElementById('code-box').innerText = '';
       document.getElementById('logout-status').classList.add('hidden');
+      document.getElementById('logout-status').classList.remove('green', 'red');
+      document.getElementById('back-button').classList.add('hidden');
+      document.body.classList.remove('background-warning');
     }
 
     function simulateLogout() {
       const codeBox = document.getElementById('code-box');
       const status = document.getElementById('logout-status');
+      const backBtn = document.getElementById('back-button');
+
       const fakeCodeLines = [
-        'Disconnecting session...',
-        'Releasing IP address...',
-        'Clearing DNS cache...',
-        'Flushing network table...',
-        'Logging out user...',
-        'Session expired.',
-        'Terminating connection...',
-        'Logout complete...'
+        '[SYS] Disconnecting from secure node...',
+        '[SYS] Revoking access token...',
+        '[NET] IP lease terminated.',
+        '[NET] DNS flushed.',
+        '[AUTH] User authentication error.',
+        '[SYS] Logging out user...',
+        '[SYS] Encountering interruption...',
+        '[SYS] Reattempting logout...',
+        '[SYS] System freeze detected.',
+        '[SYS] Executing emergency override...',
+        '[SYS] ...'
       ];
 
       let i = 0;
+      let output = '';
       const interval = setInterval(() => {
         if (i < fakeCodeLines.length) {
-          codeBox.innerText += fakeCodeLines[i] + '\n';
+          output += fakeCodeLines[i] + '\n';
+          codeBox.innerText = output;
           i++;
         } else {
           clearInterval(interval);
+
+          const logoutSuccess = Math.random() < 0.2;
+          if (logoutSuccess) {
+            status.innerText = '✅ Log Out Successful';
+            status.classList.add('green');
+          } else {
+            status.innerText = '❌ Log Out Failed - System Breach';
+            status.classList.add('red');
+            document.body.classList.add('background-warning');
+          }
+
           status.classList.remove('hidden');
+          backBtn.classList.remove('hidden');
         }
       }, 500);
     }
